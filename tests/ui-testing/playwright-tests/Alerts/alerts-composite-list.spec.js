@@ -80,27 +80,35 @@ test.describe('Composite alerts — list', {
     await expect(pm.compositeAlertsPage.listRow(parent.id)).toContainText('--');
   });
 
-  test.fixme('A4 · a composite row shows its trigger expression (o2-enterprise#2620)', async ({ page }) => {
-    const { parent } = await seedComposite(page, 'a4');
+  test('A4 · a composite row shows its trigger expression', async ({ page }) => {
+    const { a, b, parent } = await seedComposite(page, 'a4');
 
     await pm.compositeAlertsPage.openList();
     await pm.compositeAlertsPage.openListTab('composite');
 
-    // The list response carries no expression under any key, so the cell's
-    // `v-if` suppresses it entirely. Un-fixme once the backend sends one.
-    await expect(pm.compositeAlertsPage.listExpression(parent.id)).toBeVisible();
+    // Name-resolved server-side: the list row carries no children, so the UI
+    // cannot turn `{id}` operands into names on its own.
+    const cell = pm.compositeAlertsPage.listExpression(parent.id);
+    await expect(cell).toBeVisible();
+    await expect(cell).toContainText(a.name);
+    await expect(cell).toContainText(b.name);
+    await expect(cell).toContainText('AND');
+    await expect(cell).not.toContainText(a.id);
   });
 
-  test.fixme('A5 · a referenced child shows a "referenced by" chip (o2-enterprise#2619)', async ({ page }) => {
-    const { a } = await seedComposite(page, 'a5');
+  test('A5 · a referenced child shows a "referenced by" chip', async ({ page }) => {
+    const { a, parent } = await seedComposite(page, 'a5');
 
     await pm.compositeAlertsPage.openList();
     await pm.alertsPage.searchAlert(a.name);
 
-    // The API sends referenced_by_composite_count; the scheduled-row mapping
-    // drops it, so the chip never renders. Un-fixme once the mapping copies it.
-    await expect(pm.compositeAlertsPage.listReferenceCount(a.id)).toBeVisible();
-    await expect(pm.compositeAlertsPage.referenceChip()).toBeVisible();
+    // The advance warning: a child alert says it is in use BEFORE a delete is
+    // attempted, rather than only when one is refused.
+    const row = pm.compositeAlertsPage.listReferenceCount(a.id);
+    await expect(row).toBeVisible();
+    await expect(row.locator('[data-test="alerts-composite-reference-chip"]')).toBeVisible();
+    await pm.compositeAlertsPage.openReferences(a.id);
+    await expect(pm.compositeAlertsPage.referenceParent(parent.id)).toBeVisible();
   });
 
   test('A5b · the API supplies the reference count the chip needs', async ({ page }) => {
@@ -169,7 +177,7 @@ test.describe('Composite alerts — list', {
     await expect(pm.compositeAlertsPage.referenceDrawer()).toBeHidden();
   });
 
-  test.fixme('A6b · opening the conflict drawer moves focus into it (o2-enterprise#2622)', async ({ page }) => {
+  test('A6b · opening the conflict drawer moves focus into it', async ({ page }) => {
     const { a } = await seedComposite(page, 'a6b');
 
     await pm.compositeAlertsPage.openList();
@@ -177,20 +185,16 @@ test.describe('Composite alerts — list', {
     await pm.compositeAlertsPage.attemptRowDelete(a.name);
     await expect(pm.compositeAlertsPage.referenceDrawer()).toBeVisible();
 
-    // Focus is never moved into the drawer, so a keyboard user is left on the
-    // alert-list search input behind it, with no indication it appeared.
-    //
-    // Cause is in ODrawer, not here: handleOpenAutoFocus() calls
-    // event.preventDefault() unconditionally — suppressing reka-ui's own focus
-    // placement — then focuses the first input/textarea in the drawer BODY,
-    // falling back to its primary button. This drawer has neither (body is
-    // link buttons, show-close is false and the control lives in
-    // #header-right), so focus is suppressed and nothing replaces it. The bare
-    // `autofocus` attribute on the close button is all that remains, and that
-    // is not dependable for dynamically inserted content: it holds locally and
-    // never fires in CI. The fix is an explicit focus() on open, and it applies
-    // to every ODrawer whose content is not a form.
+    // ODrawer moves focus in explicitly. Its body is link buttons and it
+    // declares no primary action, so neither of the handler's original targets
+    // exists — the close control is reached through the `[autofocus]` it
+    // declares in #header-right. Asserting the bare HTML attribute would prove
+    // nothing: it is not dependable for content inserted after parse, which is
+    // precisely why the drawer used to strand focus outside itself.
     await expect(pm.compositeAlertsPage.referenceClose()).toBeFocused();
+    // Focus landed there on open, so Enter alone dismisses it.
+    await page.keyboard.press('Enter');
+    await expect(pm.compositeAlertsPage.referenceDrawer()).toBeHidden();
   });
 
   test('A10 · removing the parent first frees its children for deletion', async ({ page }) => {
