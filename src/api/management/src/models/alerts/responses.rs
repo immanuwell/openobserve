@@ -144,11 +144,9 @@ pub struct ListAlertsResponseBodyItem {
     /// Count of parent composites currently readable to the caller.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub referenced_by_composite_count: Option<usize>,
-    /// Composite rows only: the trigger expression with child IDs resolved to
-    /// names, e.g. `checkout_errors AND db_latency`. A composite row carries no
-    /// stream or condition, so without this the list shows nothing about what
-    /// it evaluates. Omitted when any child is not readable by the caller,
-    /// rather than leaking a name or a KSUID through the summary.
+    /// Composite rows only: the trigger expression with child IDs resolved to names.
+    // Omitted when any child is unreadable by the caller, rather than leaking a
+    // name or a KSUID through the summary.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expression_summary: Option<String>,
 }

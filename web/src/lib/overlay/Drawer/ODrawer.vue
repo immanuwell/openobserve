@@ -248,12 +248,14 @@ const contentStyle = computed(() => {
 const bodyRef = ref<HTMLElement | null>(null);
 const primaryBtnRef = ref<InstanceType<typeof OButton> | null>(null);
 
-const panelRef = ref<any>(null);
+const panelRef = ref<InstanceType<typeof DialogContent> | null>(null);
 
-/** The drawer panel element, whichever way reka-ui exposes the ref. */
+/** The drawer panel element; reka-ui exposes it as `$el` on some builds. */
 function panelElement(): HTMLElement | null {
   const value = panelRef.value;
-  return ((value?.$el ?? value) as HTMLElement | undefined) ?? null;
+  if (!value) return null;
+  const el = (value as { $el?: unknown }).$el ?? value;
+  return el instanceof HTMLElement ? el : null;
 }
 
 function handleOpenAutoFocus(event: Event) {
@@ -299,7 +301,7 @@ function handleOpenAutoFocus(event: Event) {
     // had preventDefault() above not cancelled it. Without this a drawer whose
     // content is neither a form nor a primary action — references, help, any
     // read-only panel — left focus outside it entirely, stranding keyboard
-    // users on the element behind (o2-enterprise#2622).
+    // users on the element behind (#14461).
     if (!panel.hasAttribute("tabindex")) panel.setAttribute("tabindex", "-1");
     panel.focus();
   });

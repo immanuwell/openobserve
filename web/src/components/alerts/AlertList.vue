@@ -1934,7 +1934,7 @@ export default defineComponent({
             // How many composites use this alert as a child. Without it the
             // "referenced by" chip never renders and the row gives no sign it
             // is load-bearing, so the first warning a user gets is a refused
-            // delete (o2-enterprise#2619).
+            // delete (#14459).
             referenced_by_composite_count: data.referenced_by_composite_count ?? 0,
             // Whether the alert CURRENTLY evaluates per group — either the
             // aggregation opt-in or the PromQL per-series one. The counts

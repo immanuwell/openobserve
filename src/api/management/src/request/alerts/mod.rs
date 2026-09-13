@@ -2795,11 +2795,8 @@ async fn permitted_alert_visibility(
     Some((is_all_permitted, permitted.into_iter().collect()))
 }
 
-/// Render a stored `{id}` expression with child IDs replaced by names.
-///
-/// Returns `None` when any operand is missing from `names`, which is how an
-/// unreadable child is handled: the whole summary is dropped rather than
-/// leaking the name, or the KSUID, of something the caller may not see.
+/// Render a stored `{id}` expression with child IDs replaced by names; `None`
+/// when any operand is missing from `names`.
 fn name_resolved_expression(
     expression: &str,
     names: &hashbrown::HashMap<String, String>,

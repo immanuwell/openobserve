@@ -7,7 +7,7 @@
  * --------------------
  * The list row is assembled by a hand-maintained, field-by-field mapping, and a
  * field the mapping forgets is invisible no matter what the API returns. Two
- * live bugs are exactly that failure (o2-enterprise#2619 and #2620), so these
+ * live bugs were exactly that failure (#14459 and #14460), so these
  * assertions are pinned to what the API demonstrably sends rather than to what
  * the table happens to render today.
  *
@@ -114,8 +114,8 @@ test.describe('Composite alerts — list', {
   test('A5b · the API supplies the reference count the chip needs', async ({ page }) => {
     const { a, parent } = await seedComposite(page, 'a5b');
 
-    // Guards the contract behind #2619 so a backend regression cannot hide
-    // behind the front-end bug while that one is still open.
+    // Guards the API contract independently of the row mapping (#14459): a
+    // backend regression here must not be masked by a front-end one.
     const rows = await listAlerts(page);
     expect(rows.find((r) => r.alert_id === a.id).referenced_by_composite_count).toBe(1);
     expect(rows.find((r) => r.alert_id === parent.id).child_count).toBe(2);
